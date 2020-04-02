@@ -1,7 +1,9 @@
 package com.flutter_webview_plugin;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -175,6 +177,27 @@ class WebviewManager {
                 FlutterWebviewPlugin.channel.invokeMethod("onScrollXChanged", xDirection);
             }
         });
+
+        if (Build.VERSION.SDK_INT >= 23 && (activity.checkSelfPermission(
+                Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ||
+                activity.checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED)) {
+            activity.requestPermissions(new String[]{
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA
+            }, 1);
+        }
+
+        WebSettings webSettings = webView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setAllowFileAccess(true);
+
+        if (Build.VERSION.SDK_INT >= 21) {
+            webSettings.setMixedContentMode(0);
+            webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        } else if (Build.VERSION.SDK_INT >= 19) {
+            webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        } else if (Build.VERSION.SDK_INT < 19) {
+            webView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        }
 
         webView.setWebViewClient(webViewClient);
         webView.setWebChromeClient(new WebChromeClient() {
