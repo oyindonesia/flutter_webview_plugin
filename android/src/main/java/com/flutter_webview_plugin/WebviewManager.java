@@ -1,5 +1,6 @@
 package com.flutter_webview_plugin;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.net.Uri;
 import android.annotation.TargetApi;
@@ -7,7 +8,9 @@ import android.app.Activity;
 import android.content.Context;
 import android.net.http.SslError;
 import android.os.Build;
+import android.os.Environment;
 import android.os.Handler;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -45,7 +48,7 @@ import static android.app.Activity.RESULT_OK;
  */
 
 class WebviewManager {
-
+    private static final String TAG = WebviewManager.class.getSimpleName();
     private ValueCallback<Uri> mUploadMessage;
     private ValueCallback<Uri[]> mUploadMessageArray;
     private final static int FILECHOOSER_RESULTCODE = 1;
@@ -136,9 +139,9 @@ class WebviewManager {
         webViewClient = new BrowserClient() {
             @Override
             public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                if (ignoreSSLErrors){
+                if (ignoreSSLErrors) {
                     handler.proceed();
-                }else {
+                } else {
                     super.onReceivedSslError(view, handler, error);
                 }
             }
@@ -213,6 +216,7 @@ class WebviewManager {
             public boolean onShowFileChooser(
                     WebView webView, ValueCallback<Uri[]> filePathCallback,
                     FileChooserParams fileChooserParams) {
+
                 if (mUploadMessageArray != null) {
                     mUploadMessageArray.onReceiveValue(null);
                 }
@@ -222,12 +226,23 @@ class WebviewManager {
                 List<Intent> intentList = new ArrayList<Intent>();
                 fileUri = null;
                 videoUri = null;
+
                 if (acceptsImages(acceptTypes)) {
-                    Intent takePhotoIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                    fileUri = getOutputFilename(MediaStore.ACTION_IMAGE_CAPTURE);
-                    takePhotoIntent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
-                    intentList.add(takePhotoIntent);
+                    Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                    if (takePictureIntent.resolveActivity(activity.getPackageManager()) != null) {
+                        File photoFile = null;
+                        try {
+                            photoFile = createImageFile();
+                        } catch (IOException ex) {
+                            Log.e(TAG, "Image file creation failed", ex);
+                        }
+                        if (photoFile != null) {
+                            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(photoFile));
+                            intentList.add(takePictureIntent);
+                        }
+                    }
                 }
+
                 if (acceptsVideo(acceptTypes)) {
                     Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
                     videoUri = getOutputFilename(MediaStore.ACTION_VIDEO_CAPTURE);
@@ -249,6 +264,7 @@ class WebviewManager {
                 Intent chooserIntent = new Intent(Intent.ACTION_CHOOSER);
                 chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent);
                 chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, intentArray);
+                chooserIntent.putExtra(Intent.EXTRA_TITLE, "Image Chooser");
                 activity.startActivityForResult(chooserIntent, FILECHOOSER_RESULTCODE);
                 return true;
             }
@@ -266,6 +282,13 @@ class WebviewManager {
             }
         });
         registerJavaScriptChannelNames(channelNames);
+    }
+
+    private File createImageFile() throws IOException {
+        @SuppressLint("SimpleDateFormat") String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "img_" + timeStamp + "_";
+        File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+        return File.createTempFile(imageFileName, ".jpg", storageDir);
     }
 
     private Uri getOutputFilename(String intentType) {
@@ -533,7 +556,7 @@ class WebviewManager {
     /**
      * Clears cache
      */
-    void cleanCache(){
+    void cleanCache() {
         webView.clearCache(true);
     }
 
