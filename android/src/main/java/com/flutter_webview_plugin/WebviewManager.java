@@ -243,12 +243,6 @@ class WebviewManager {
                     }
                 }
 
-                if (acceptsVideo(acceptTypes)) {
-                    Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
-                    videoUri = getOutputFilename(MediaStore.ACTION_VIDEO_CAPTURE);
-                    takeVideoIntent.putExtra(MediaStore.EXTRA_OUTPUT, videoUri);
-                    intentList.add(takeVideoIntent);
-                }
                 Intent contentSelectionIntent;
                 if (Build.VERSION.SDK_INT >= 21) {
                     final boolean allowMultiple = fileChooserParams.getMode() == FileChooserParams.MODE_OPEN_MULTIPLE;
