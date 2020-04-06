@@ -178,14 +178,6 @@ class WebviewManager {
             }
         });
 
-        if (Build.VERSION.SDK_INT >= 23 && (activity.checkSelfPermission(
-                Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ||
-                activity.checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED)) {
-            activity.requestPermissions(new String[]{
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA
-            }, 1);
-        }
-
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setAllowFileAccess(true);
